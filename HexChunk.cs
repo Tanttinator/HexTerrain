@@ -16,15 +16,29 @@ namespace Tanttinator.HexTerrain
 
         [SerializeField] HexMesh ground = default;
 
+        public HexWorld world;
+
         /// <summary>
         /// Add a new tile to this chunk.
         /// </summary>
         /// <param name="coords"></param>
         /// <param name="world"></param>
-        HexTile CreateTile(Coords coords, HexWorld world)
+        HexTile CreateTile(Coords coords)
         {
             HexTile tile = tiles[coords] = new HexTile(coords, this, world);
             return tile;
+        }
+
+        /// <summary>
+        /// Try to get the tile in the given position or create a new one.
+        /// </summary>
+        /// <param name="coords"></param>
+        /// <returns></returns>
+        public HexTile GetOrCreateTile(Coords coords)
+        {
+            if (tiles.ContainsKey(coords))
+                return tiles[coords];
+            return CreateTile(coords);
         }
 
         /// <summary>
@@ -32,11 +46,11 @@ namespace Tanttinator.HexTerrain
         /// </summary>
         /// <param name="coords"></param>
         /// <returns></returns>
-        public HexTile GetTile(Coords coords, HexWorld world)
+        public HexTile GetTile(Coords coords)
         {
             if (tiles.ContainsKey(coords))
                 return tiles[coords];
-            return CreateTile(coords, world);
+            return null;
         }
 
          /// <summary>
@@ -60,6 +74,9 @@ namespace Tanttinator.HexTerrain
         {
             foreach (Direction dir in Direction.directions)
                 TriangulateSector(tile, dir);
+            TriangulateEdge(tile, world.Neighbor(tile, Direction.NORTH_EAST), Direction.NORTH_EAST);
+            TriangulateEdge(tile, world.Neighbor(tile, Direction.EAST), Direction.EAST);
+            TriangulateEdge(tile, world.Neighbor(tile, Direction.SOUTH_EAST), Direction.SOUTH_EAST);
         }
 
         /// <summary>
@@ -70,6 +87,18 @@ namespace Tanttinator.HexTerrain
         void TriangulateSector(HexTile tile, Direction dir)
         {
             ground.AddTriangle(tile.center, tile.vertices[dir][0], tile.vertices[dir][1]);
+        }
+
+        /// <summary>
+        /// Triangulate edge between two tiles.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="dir"></param>
+        void TriangulateEdge(HexTile a, HexTile b, Direction dir)
+        {
+            if(b != null)
+                ground.AddQuad(b.vertices[dir.Opposite][1], b.vertices[dir.Opposite][0], a.vertices[dir][1], a.vertices[dir][0]);
         }
 
         /// <summary>

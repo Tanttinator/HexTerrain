@@ -10,6 +10,7 @@ namespace Tanttinator.HexTerrain
     /// </summary>
     public class HexTile
     {
+        public Coords coords { get; protected set; }
         public Vector2 position { get; protected set; }
         float height = 0f;
         public float Height => height;
@@ -21,6 +22,7 @@ namespace Tanttinator.HexTerrain
 
         public HexTile(Coords coords, HexChunk chunk, HexWorld world)
         {
+            this.coords = coords;
             position = world.CalculateCenter(coords);
             this.chunk = chunk;
             InitVertices(world);

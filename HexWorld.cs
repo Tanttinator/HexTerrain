@@ -69,6 +69,7 @@ namespace Tanttinator.HexTerrain
         HexChunk CreateChunk(Coords coords)
         {
             HexChunk chunk = chunks[coords] = Instantiate(chunkObject, transform);
+            chunk.world = this;
             return chunk;
         }
 
@@ -91,7 +92,28 @@ namespace Tanttinator.HexTerrain
         /// <returns></returns>
         public HexTile GetTile(Coords coords)
         {
-            return GetChunk(CoordsToChunkCoords(coords)).GetTile(coords, this);
+            return GetChunk(CoordsToChunkCoords(coords)).GetTile(coords);
+        }
+
+        /// <summary>
+        /// Try to get a tile at the given position in world coords or create a new one.
+        /// </summary>
+        /// <param name="coords"></param>
+        /// <returns></returns>
+        public HexTile GetOrCreateTile(Coords coords)
+        {
+            return GetChunk(CoordsToChunkCoords(coords)).GetOrCreateTile(coords);
+        }
+
+        /// <summary>
+        /// Try to get the neighbor of the given tile in the given direction.
+        /// </summary>
+        /// <param name="tile"></param>
+        /// <param name="dir"></param>
+        /// <returns></returns>
+        public HexTile Neighbor(HexTile tile, Direction dir)
+        {
+            return GetTile(tile.coords.Neighbor(dir));
         }
 
         /// <summary>
