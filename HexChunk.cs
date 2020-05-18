@@ -8,31 +8,23 @@ namespace Tanttinator.HexTerrain
     /// <summary>
     /// Represent one chunk of the terrain mesh.
     /// </summary>
+    [ExecuteInEditMode]
     public class HexChunk : MonoBehaviour
     {
-        HexTile[,] tiles;
+        Dictionary<Coords, HexTile> tiles = new Dictionary<Coords, HexTile>();
         Coords position;
 
         [SerializeField] HexMesh ground = default;
 
         /// <summary>
-        /// Create new tiles based on the position of this chunk.
+        /// Add a new tile to this chunk.
         /// </summary>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkY"></param>
-        /// <param name="chunkSize"></param>
-        public void SetTiles(Coords coords, HexWorld world)
+        /// <param name="coords"></param>
+        /// <param name="world"></param>
+        HexTile CreateTile(Coords coords, HexWorld world)
         {
-            int chunkSize = world.chunkSize;
-            tiles = new HexTile[chunkSize, chunkSize];
-            position = coords;
-            for(int x = 0; x < chunkSize; x++)
-            {
-                for(int z = 0; z < chunkSize; z++)
-                {
-                    tiles[x, z] = new HexTile(coords.x * chunkSize + x, coords.y * chunkSize + z, world);
-                }
-            }
+            HexTile tile = tiles[coords] = new HexTile(coords, this, world);
+            return tile;
         }
 
         /// <summary>
@@ -40,12 +32,11 @@ namespace Tanttinator.HexTerrain
         /// </summary>
         /// <param name="coords"></param>
         /// <returns></returns>
-        public HexTile GetTile(Coords coords)
+        public HexTile GetTile(Coords coords, HexWorld world)
         {
-            Coords localPos = coords - position;
-            if (localPos.x < 0 || localPos.x >= tiles.GetLength(0) || localPos.y < 0 || localPos.y >= tiles.GetLength(1))
-                return null;
-            return tiles[localPos.x, localPos.y];
+            if (tiles.ContainsKey(coords))
+                return tiles[coords];
+            return CreateTile(coords, world);
         }
 
          /// <summary>
@@ -55,7 +46,7 @@ namespace Tanttinator.HexTerrain
         {
             ground.Clear();
 
-            foreach (HexTile tile in tiles)
+            foreach (HexTile tile in tiles.Values)
                 TriangulateTile(tile);
 
             ground.Apply();

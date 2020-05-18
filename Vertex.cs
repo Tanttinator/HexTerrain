@@ -16,7 +16,7 @@ namespace Tanttinator.HexTerrain
 
         HexTile tile;
 
-        public Vector3 Position => new Vector3(tile.position.x + position.x, tile.height + height, tile.position.y + position.y);
+        public Vector3 Position => new Vector3(tile.position.x + position.x, tile.Height + height, tile.position.y + position.y);
         public Color Color => tile.color;
 
         public Vertex(HexTile tile, Vector2 position)

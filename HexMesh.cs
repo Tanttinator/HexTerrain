@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Tanttinator.HexTerrain
 {
+    [ExecuteInEditMode]
     public class HexMesh : MonoBehaviour
     {
         List<Vector3> vertices = new List<Vector3>();
@@ -12,6 +13,14 @@ namespace Tanttinator.HexTerrain
         List<Vector2> uvs = new List<Vector2>();
 
         MeshFilter mf;
+        MeshFilter MF
+        {
+            get
+            {
+                if(mf == null) mf = GetComponent<MeshFilter>();
+                return mf;
+            }
+        }
 
         /// <summary>
         /// Reset this mesh.
@@ -36,7 +45,7 @@ namespace Tanttinator.HexTerrain
             mesh.uv = uvs.ToArray();
             mesh.RecalculateNormals();
 
-            mf.mesh = mesh;
+            MF.mesh = mesh;
         }
 
         int AddVertex(Vertex vertex)
@@ -62,11 +71,6 @@ namespace Tanttinator.HexTerrain
             d.uv = new Vector2(0f, 0f);
             AddTriangle(a, b, c);
             AddTriangle(a, c, d);
-        }
-
-        private void Awake()
-        {
-            mf = GetComponent<MeshFilter>();
         }
     }
 }

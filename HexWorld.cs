@@ -8,6 +8,7 @@ namespace Tanttinator.HexTerrain
     /// <summary>
     /// Contains information for a single hex grid.
     /// </summary>
+    [ExecuteInEditMode]
     public class HexWorld : MonoBehaviour
     {
         public int chunkSize = 10;
@@ -56,9 +57,9 @@ namespace Tanttinator.HexTerrain
             return N;
         }
 
-        public Vector2 CalculateCenter(int x, int y)
+        public Vector2 CalculateCenter(Coords coords)
         {
-            return new Vector2(x * WidthDiff + (Mathf.Abs(y) % 2 == 0 ? 0 : WidthOffset), y * HeightDiff);
+            return new Vector2(coords.x * WidthDiff + (Mathf.Abs(coords.y) % 2 == 0 ? 0 : WidthOffset), coords.y * HeightDiff);
         }
 
         /// <summary>
@@ -67,9 +68,7 @@ namespace Tanttinator.HexTerrain
         /// <param name="coords"></param>
         HexChunk CreateChunk(Coords coords)
         {
-            HexChunk chunk = Instantiate(chunkObject, transform);
-            chunk.SetTiles(coords, this);
-            chunks[coords] = chunk;
+            HexChunk chunk = chunks[coords] = Instantiate(chunkObject, transform);
             return chunk;
         }
 
@@ -92,7 +91,17 @@ namespace Tanttinator.HexTerrain
         /// <returns></returns>
         public HexTile GetTile(Coords coords)
         {
-            return GetChunk(CoordsToChunkCoords(coords)).GetTile(coords);
+            return GetChunk(CoordsToChunkCoords(coords)).GetTile(coords, this);
+        }
+
+        /// <summary>
+        /// Destroy all graphics.
+        /// </summary>
+        public void Clear()
+        {
+            foreach (HexChunk chunk in chunks.Values)
+                DestroyImmediate(chunk.gameObject);
+            chunks.Clear();
         }
 
         /// <summary>
