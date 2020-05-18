@@ -17,10 +17,19 @@ namespace Tanttinator.HexTerrain
         public const float COS_30 = 0.8660254038f;
 
         public float scale = 1f;
+        public float heightScale = 3f;
         public float InnerRadius => scale / 2f;
         public float OuterRadius => InnerRadius / COS_30;
 
         public float edgeWidth = 0.6f;
+
+        [Range(0f, 1f)]
+        [SerializeField] float riverWidthMultiplier = 0.5f;
+        public float RiverWidth => OuterRadius * riverWidthMultiplier;
+
+        [SerializeField] float riverDepthMultiplier = 20f;
+        public float RiverDepth => heightScale * riverDepthMultiplier;
+        public float riverWaterHeight = 0.75f;
 
         public float WidthDiff => 2 * InnerRadius + edgeWidth;
         public float WidthOffset => WidthDiff * 0.5f;
@@ -55,6 +64,11 @@ namespace Tanttinator.HexTerrain
             if (dir == Direction.WEST) return NW;
             if (dir == Direction.NORTH_WEST) return N;
             return N;
+        }
+
+        public Vector2 MiddleVertex(Direction dir)
+        {
+            return (LeftVertex(dir) + RightVertex(dir)) * 0.5f;
         }
 
         public Vector2 CalculateCenter(Coords coords)

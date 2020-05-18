@@ -35,14 +35,11 @@ namespace Tanttinator.HexTerrain
 
     public class Vertices : Dictionary<Direction, Vertex[]>
     {
-        public Vertex center { get; protected set; }
-        
-        public Vertices(Vertex center)
+        public Vertices()
         {
-            this.center = center;
             foreach(Direction dir in Direction.directions)
             {
-                this[dir] = new Vertex[2];
+                this[dir] = new Vertex[9];
             }
         }
     }
