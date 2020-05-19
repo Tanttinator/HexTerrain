@@ -15,22 +15,26 @@ namespace Tanttinator.HexTerrain
         float height = 0f;
         public float Height => height * chunk.world.heightScale;
         public Color color { get; protected set; } = Color.white;
+        float waterLevel = 0f;
+        public float WaterLevel => waterLevel * chunk.world.heightScale;
+        public bool Underwater => waterLevel > height;
         public Vertex center { get; protected set; }
-        public Vertices vertices { get; protected set; }
+        public Vertices ground { get; protected set; }
+        public Vertex waterCenter { get; protected set; }
 
         public HexChunk chunk { get; protected set; }
 
         Dictionary<Direction, Edge> edges = new Dictionary<Direction, Edge>();
 
-        public HexTile(Coords coords, HexChunk chunk, HexWorld world)
+        public HexTile(Coords coords, HexChunk chunk)
         {
             this.coords = coords;
-            position = world.CalculateCenter(coords);
+            position = chunk.world.CalculateCenter(coords);
             this.chunk = chunk;
-            InitVertices(world);
-            edges[Direction.NORTH_EAST] = new Edge(this, Direction.NORTH_EAST, world);
-            edges[Direction.EAST] = new Edge(this, Direction.EAST, world);
-            edges[Direction.SOUTH_EAST] = new Edge(this, Direction.SOUTH_EAST, world);
+            InitVertices(chunk.world);
+            edges[Direction.NORTH_EAST] = new Edge(this, Direction.NORTH_EAST, chunk);
+            edges[Direction.EAST] = new Edge(this, Direction.EAST, chunk);
+            edges[Direction.SOUTH_EAST] = new Edge(this, Direction.SOUTH_EAST, chunk);
             Refresh();
         }
 
@@ -40,7 +44,8 @@ namespace Tanttinator.HexTerrain
         void InitVertices(HexWorld world)
         {
             center = new Vertex(this, new Vector2(0f, 0f));
-            vertices = new Vertices();
+            ground = new Vertices();
+            waterCenter = new WaterVertex(this, position);
             foreach(Direction dir in Direction.directions)
             {
                 float centerHexOuterRadius = world.RiverWidth / HexWorld.COS_30 * 0.5f;
@@ -59,15 +64,15 @@ namespace Tanttinator.HexTerrain
                 Vector2 e = edgeMid + (c - riverEdgeLeft);
                 Vector2 f = riverEdgeRight + (c - riverEdgeLeft);
 
-                vertices[dir][0] = new Vertex(this, a);
-                vertices[dir][1] = new Vertex(this, b);
-                vertices[dir][2] = new Vertex(this, c);
-                vertices[dir][3] = new Vertex(this, riverEdgeLeft);
-                vertices[dir][4] = new Vertex(this, e);
-                vertices[dir][5] = new Vertex(this, edgeMid);
-                vertices[dir][6] = new Vertex(this, f);
-                vertices[dir][7] = new Vertex(this, riverEdgeRight);
-                vertices[dir][8] = new Vertex(this, edgeRight);
+                ground[dir][0] = new Vertex(this, a);
+                ground[dir][1] = new Vertex(this, b);
+                ground[dir][2] = new Vertex(this, c);
+                ground[dir][3] = new Vertex(this, riverEdgeLeft);
+                ground[dir][4] = new Vertex(this, e);
+                ground[dir][5] = new Vertex(this, edgeMid);
+                ground[dir][6] = new Vertex(this, f);
+                ground[dir][7] = new Vertex(this, riverEdgeRight);
+                ground[dir][8] = new Vertex(this, edgeRight);
             }
         }
 
@@ -80,6 +85,12 @@ namespace Tanttinator.HexTerrain
         public void SetColor(Color color)
         {
             this.color = color;
+            Refresh();
+        }
+
+        public void SetWaterLevel(float waterLevel)
+        {
+            this.waterLevel = waterLevel;
             Refresh();
         }
 
@@ -110,6 +121,65 @@ namespace Tanttinator.HexTerrain
             foreach (Edge edge in edges.Values)
                 edge.Refresh();
             chunk.Refresh();
+        }
+
+        public void Triangulate()
+        {
+            TriangulateGround();
+            if (Underwater)
+                TriangulateWater();
+        }
+
+        void TriangulateGround()
+        {
+            foreach(Direction dir in Direction.directions)
+            {
+                Vertex a = ground[dir][0];
+                Vertex b = ground[dir.Clockwise][0];
+                Vertex c = ground[dir.Clockwise][1];
+                Vertex d = ground[dir][1];
+                Vertex e = ground[dir][4];
+                Vertex f = ground[dir][6];
+                Vertex g = ground[dir][2];
+                Vertex h = ground[dir][3];
+
+                Vertex edgeMid = ground[dir][5];
+                Vertex riverEdgeRight = ground[dir][7];
+                Vertex edgeRight = ground[dir][8];
+
+                chunk.ground.AddTriangle(center, a, b);
+                chunk.ground.AddTriangle(a, c, b);
+                chunk.ground.AddQuad(e, f, c, a);
+                chunk.ground.AddQuad(e, a, d, g);
+                chunk.ground.AddQuad(h, edgeMid, e, g);
+                chunk.ground.AddQuad(edgeMid, riverEdgeRight, f, e);
+                chunk.ground.AddTriangle(c, f, ground[dir.Clockwise][2]);
+                chunk.ground.AddTriangle(f, riverEdgeRight, edgeRight);
+                chunk.ground.AddQuad(edgeRight, ground[dir.Clockwise][3], ground[dir.Clockwise][2], f);  
+            }
+        }
+
+        void TriangulateWater()
+        {
+            foreach(Direction dir in Direction.directions)
+            {
+                Edge edge = GetEdge(dir);
+                Edge rightEdge = GetEdge(dir.Clockwise);
+                Edge leftEdge = GetEdge(dir.CounterClockwise);
+
+                Vertex left = new WaterVertex(this, ground[dir.CounterClockwise][8].GlobalPos);
+                Vertex right = new WaterVertex(this, ground[dir][8].GlobalPos);
+
+                if (rightEdge != null && rightEdge.water != null) right = rightEdge.water[dir.Clockwise][0];
+                if (leftEdge != null && leftEdge.water != null) left = leftEdge.water[dir.CounterClockwise][1];
+                if(edge != null && edge.water != null)
+                {
+                    left = edge.water[dir][0];
+                    right = edge.water[dir][1];
+                }
+
+                chunk.water.AddTriangle(waterCenter, left, right);
+            }
         }
     }
 }

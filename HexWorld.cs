@@ -22,6 +22,9 @@ namespace Tanttinator.HexTerrain
         public float OuterRadius => InnerRadius / COS_30;
 
         public float edgeWidth = 0.6f;
+        [Range(0f, 1f)]
+        [SerializeField] float shoreWidthMultiplier = 0.5f;
+        public float ShoreWidth => edgeWidth * shoreWidthMultiplier;
 
         [Range(0f, 1f)]
         [SerializeField] float riverWidthMultiplier = 0.5f;
@@ -74,6 +77,50 @@ namespace Tanttinator.HexTerrain
         public Vector2 CalculateCenter(Coords coords)
         {
             return new Vector2(coords.x * WidthDiff + (Mathf.Abs(coords.y) % 2 == 0 ? 0 : WidthOffset), coords.y * HeightDiff);
+        }
+
+        public Vector2 LerpHeight(Vertex a, Vertex b, float height)
+        {
+            Vertex upper = a;
+            Vertex lower = b;
+            if(a.Position.y < b.Position.y)
+            {
+                upper = b;
+                lower = a;
+            }
+
+            float t = Mathf.Clamp01((height - lower.Position.y) / (upper.Position.y - lower.Position.y));
+
+            return Vector2.Lerp(lower.GlobalPos, upper.GlobalPos, t);
+        }
+
+        public Vector2 LeftShoreVertex(Edge a)
+        {
+            return a.water[a.Upstream.Opposite][1].GlobalPos + (a.ground[a.Upstream][0].GlobalPos - a.ground[a.Upstream.Opposite][4].GlobalPos).normalized * ShoreWidth;
+        }
+
+        public Vector2 RightShoreVertex(Edge a)
+        {
+            return a.water[a.Upstream.Opposite][0].GlobalPos + (a.ground[a.Upstream][4].GlobalPos - a.ground[a.Upstream.Opposite][0].GlobalPos).normalized * ShoreWidth;
+        }
+
+        public Vector2 ShoreVertex(Edge a, Edge b)
+        {
+            if (a == null || a.water == null)
+            {
+                return RightShoreVertex(b);
+            }
+            if (b == null || b.water == null)
+            {
+                return LeftShoreVertex(a);
+            }
+
+            Vector2 va = LeftShoreVertex(a);
+            Vector2 vb = RightShoreVertex(b);
+
+            Vector2 diff = (vb - va) / 2f;
+
+            return va + diff;
         }
 
         /// <summary>

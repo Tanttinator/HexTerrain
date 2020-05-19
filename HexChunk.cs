@@ -14,7 +14,9 @@ namespace Tanttinator.HexTerrain
         Dictionary<Coords, HexTile> tiles = new Dictionary<Coords, HexTile>();
         Coords position;
 
-        [SerializeField] HexMesh ground = default;
+        public HexMesh ground;
+        public HexMesh water;
+        public HexMesh shore;
 
         public HexWorld world;
 
@@ -25,7 +27,7 @@ namespace Tanttinator.HexTerrain
         /// <param name="world"></param>
         HexTile CreateTile(Coords coords)
         {
-            HexTile tile = tiles[coords] = new HexTile(coords, this, world);
+            HexTile tile = tiles[coords] = new HexTile(coords, this);
             return tile;
         }
 
@@ -59,100 +61,96 @@ namespace Tanttinator.HexTerrain
         void Triangulate()
         {
             ground.Clear();
+            water.Clear();
+            shore.Clear();
 
             foreach (HexTile tile in tiles.Values)
-                TriangulateTile(tile);
+                tile.Triangulate();
 
-            ground.Apply();
-        }
-
-        /// <summary>
-        /// Triangulate single tile.
-        /// </summary>
-        /// <param name="tile"></param>
-        void TriangulateTile(HexTile tile)
-        {
-            foreach (Direction dir in Direction.directions)
-                TriangulateSector(tile, dir);
-            TriangulateEdge(tile, world.Neighbor(tile, Direction.NORTH_EAST), Direction.NORTH_EAST);
-            TriangulateEdge(tile, world.Neighbor(tile, Direction.EAST), Direction.EAST);
-            TriangulateEdge(tile, world.Neighbor(tile, Direction.SOUTH_EAST), Direction.SOUTH_EAST);
-
-            TriangulateCorner(tile, world.Neighbor(tile, Direction.EAST), world.Neighbor(tile, Direction.NORTH_EAST), Direction.EAST);
-            TriangulateCorner(tile, world.Neighbor(tile, Direction.SOUTH_EAST), world.Neighbor(tile, Direction.EAST), Direction.SOUTH_EAST);
-        }
-
-        /// <summary>
-        /// Triangulate single sector in a tile.
-        /// </summary>
-        /// <param name="tile"></param>
-        /// <param name="dir"></param>
-        void TriangulateSector(HexTile tile, Direction dir)
-        {
-            Vertex a = tile.vertices[dir][0];
-            Vertex b = tile.vertices[dir.Clockwise][0];
-            Vertex c = tile.vertices[dir.Clockwise][1];
-            Vertex d = tile.vertices[dir][1];
-            Vertex e = tile.vertices[dir][4];
-            Vertex f = tile.vertices[dir][6];
-            Vertex g = tile.vertices[dir][2];
-            Vertex h = tile.vertices[dir][3];
-
-            Vertex edgeMid = tile.vertices[dir][5];
-            Vertex riverEdgeRight = tile.vertices[dir][7];
-            Vertex edgeRight = tile.vertices[dir][8];
-
-            ground.AddTriangle(tile.center, a, b);
-            ground.AddTriangle(a, c, b);
-            ground.AddQuad(e, f, c, a);
-            ground.AddQuad(e, a, d, g);
-            ground.AddQuad(h, edgeMid, e, g);
-            ground.AddQuad(edgeMid, riverEdgeRight, f, e);
-            ground.AddTriangle(c, f, tile.vertices[dir.Clockwise][2]);
-            ground.AddTriangle(f, riverEdgeRight, edgeRight);
-            ground.AddQuad(edgeRight, tile.vertices[dir.Clockwise][3], tile.vertices[dir.Clockwise][2], f);
-        }
-
-        /// <summary>
-        /// Triangulate edge between two tiles.
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="dir"></param>
-        void TriangulateEdge(HexTile a, HexTile b, Direction dir)
-        {
-            if (b == null)
-                return;
-            Edge edge = a.GetEdge(dir);
-            HexTile upper = b;
-            HexTile lower = a;
-            Direction upstream = dir;
-            if(b.Height < a.Height)
+            foreach(HexTile tile in tiles.Values)
             {
-                upper = a;
-                lower = b;
-                upstream = dir.Opposite;
+                tile.GetEdge(Direction.NORTH_EAST).Triangulate();
+                tile.GetEdge(Direction.EAST).Triangulate();
+                tile.GetEdge(Direction.SOUTH_EAST).Triangulate();
+
+                TriangulateCorner(tile, Direction.NORTH_EAST);
+                TriangulateCorner(tile, Direction.EAST);
             }
 
-            ground.AddQuad(edge.vertices[dir.Opposite][4], edge.vertices[dir.Opposite][3], edge.vertices[dir][1], edge.vertices[dir][0]);
-            ground.AddQuad(edge.vertices[dir.Opposite][1], edge.vertices[dir.Opposite][0], edge.vertices[dir][4], edge.vertices[dir][3]);
-
-            ground.AddTriangle(edge.vertices[upstream.Opposite][3], edge.vertices[upstream.Opposite][2], edge.vertices[upstream][1]);
-            ground.AddTriangle(edge.vertices[upstream.Opposite][2], edge.vertices[upstream][2], edge.vertices[upstream][1]);
-            ground.AddTriangle(edge.vertices[upstream.Opposite][2], edge.vertices[upstream][3], edge.vertices[upstream][2]);
-            ground.AddTriangle(edge.vertices[upstream.Opposite][2], edge.vertices[upstream.Opposite][1], edge.vertices[upstream][3]);
+            ground.Apply();
+            water.Apply();
+            shore.Apply();
         }
 
-        void TriangulateCorner(HexTile ta, HexTile tb, HexTile tc, Direction dir)
+        void TriangulateCorner(HexTile a, Direction dir)
         {
-            if (tb == null || tc == null)
+            HexTile b = world.Neighbor(a, dir);
+            HexTile c = world.Neighbor(a, dir.Clockwise);
+
+            if (b == null || c == null)
                 return;
 
-            Edge a = ta.GetEdge(dir);
-            Edge b = tb.GetEdge(dir.CounterClockwise.CounterClockwise);
-            Edge c = ta.GetEdge(dir.CounterClockwise);
+            TriangulateCornerGround(a, b, c, dir);
+            TriangulateCornerWater(a, b, c, dir);
+        }
 
-            ground.AddTriangle(a.vertices[dir][0], c.vertices[dir.CounterClockwise.Opposite][0], b.vertices[dir.CounterClockwise.CounterClockwise][0]);
+        void TriangulateCornerGround(HexTile a, HexTile b, HexTile c, Direction dir)
+        {
+            ground.AddTriangle(a.ground[dir][8], b.ground[dir.Opposite.CounterClockwise][8], c.ground[dir.Clockwise.Opposite][8]);
+        }
+
+        void TriangulateCornerWater(HexTile a, HexTile b, HexTile c, Direction dir)
+        {
+            if (a.Underwater)
+            {
+                if (b.Underwater && c.Underwater)
+                {
+                    Edge right = a.GetEdge(dir.Clockwise);
+                    Edge left = a.GetEdge(dir);
+                    water.AddTriangle(right.water[dir.Clockwise.Opposite][1], right.water[dir.Clockwise][0], left.water[dir.Opposite][0]);
+                }
+                if (!b.Underwater && c.Underwater)
+                {
+                    TriangulateShoreCornerWWL(c.GetEdge(dir.CounterClockwise), a.GetEdge(dir));
+                }
+                if (b.Underwater && !c.Underwater)
+                {
+                    TriangulateShoreCornerWWL(a.GetEdge(dir.Clockwise), b.GetEdge(dir.Clockwise.Clockwise));
+                }
+                if (!b.Underwater && !c.Underwater)
+                {
+                    TriangulateShoreCornerWLL(a.GetEdge(dir.Clockwise), a.GetEdge(dir));
+                }
+            }
+            else if (b.Underwater)
+                TriangulateCornerWater(b, c, a, dir.Clockwise.Clockwise);
+            else if (c.Underwater)
+                TriangulateCornerWater(c, a, b, dir.CounterClockwise.CounterClockwise);
+        }
+
+        void TriangulateShoreCornerWWL(Edge a, Edge b)
+        {
+            if (a.water == null || b.water == null)
+                return;
+            shore.AddQuad(
+                b.water[b.Upstream.Opposite][0],
+                a.water[a.Upstream.Opposite][1],
+                a.water[a.Upstream][0],
+                b.water[b.Upstream][1]
+                );
+        }
+
+        void TriangulateShoreCornerWLL(Edge a, Edge b)
+        {
+            if (a.water == null || b.water == null)
+                return;
+            Vertex bottom = a.water[a.Upstream][0];
+            bottom.uv = new Vector2(0.5f, 0f);
+            Vertex left = b.water[b.Upstream.Opposite][0];
+            left.uv = new Vector2(0f, 1f);
+            Vertex right = a.water[a.Upstream.Opposite][1];
+            right.uv = new Vector2(1f, 1f);
+            shore.AddTriangle(bottom, left, right);
         }
 
         /// <summary>
