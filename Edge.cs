@@ -170,6 +170,18 @@ namespace Tanttinator.HexTerrain {
             chunk.ground.AddTriangle(ground[Upstream.Opposite][2], ground[Upstream][2], ground[Upstream][1]);
             chunk.ground.AddTriangle(ground[Upstream.Opposite][2], ground[Upstream][3], ground[Upstream][2]);
             chunk.ground.AddTriangle(ground[Upstream.Opposite][2], ground[Upstream.Opposite][1], ground[Upstream][3]);
+
+            if(Upper.outgoingRiver == Upstream.Opposite)
+            {
+                if(Lower.incomingRivers.Contains(Upstream))
+                {
+                    chunk.river.AddQuad(Lower.river[Upstream][1], Lower.river[Upstream][0], Upper.river[Upstream.Opposite][1], Upper.river[Upstream.Opposite][0]);
+                }
+                else if(Lower.Underwater)
+                {
+                    chunk.river.AddQuad(shore[1], shore[0], Upper.river[Upstream.Opposite][1], Upper.river[Upstream.Opposite][0]);
+                }
+            }
         }
 
         void TriangulateShore()
