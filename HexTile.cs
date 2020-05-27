@@ -67,7 +67,7 @@ namespace Tanttinator.HexTerrain
 
                 Vector2 a = edgeMid.normalized * centerHexOuterRadius;
                 Vector2 b = edgeLeft.normalized * world.RiverWidth;
-                Vector2 c = riverEdgeLeft - a;
+                Vector2 c = (riverEdgeLeft - b) * 0.5f + b;
 
                 Vector2 e = edgeMid + (c - riverEdgeLeft);
                 Vector2 f = riverEdgeRight + (c - riverEdgeLeft);
