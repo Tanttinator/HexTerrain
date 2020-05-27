@@ -17,8 +17,9 @@ namespace Tanttinator.HexTerrain
         public HexMesh ground;
         public HexMesh water;
         public HexMesh shore;
+        public HexMesh river;
 
-        public HexWorld world;
+        [HideInInspector] public HexWorld world;
 
         /// <summary>
         /// Add a new tile to this chunk.
@@ -63,6 +64,7 @@ namespace Tanttinator.HexTerrain
             ground.Clear();
             water.Clear();
             shore.Clear();
+            river.Clear();
 
             foreach (HexTile tile in tiles.Values)
                 tile.Triangulate();
@@ -80,6 +82,7 @@ namespace Tanttinator.HexTerrain
             ground.Apply();
             water.Apply();
             shore.Apply();
+            river.Apply();
         }
 
         void TriangulateCorner(HexTile a, Direction dir)

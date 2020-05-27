@@ -11,7 +11,7 @@ namespace Tanttinator.HexTerrain
     public class Vertex
     {
         public Vector2 localPos { get; protected set; }
-        float height;
+        public float height;
         public Vector2 uv = new Vector2(0f, 0f);
 
         protected HexTile tile;
@@ -23,14 +23,21 @@ namespace Tanttinator.HexTerrain
         public Vertex(HexTile tile, Vector2 position)
         {
             this.tile = tile;
-            this.localPos = position;
+            localPos = position;
         }
 
         public Vertex(HexTile tile, Vector2 position, Vector2 uv)
         {
             this.tile = tile;
-            this.localPos = position;
+            localPos = position;
             this.uv = uv;
+        }
+
+        public Vertex Clone(float height)
+        {
+            Vertex v = new Vertex(tile, localPos);
+            v.height = height;
+            return v;
         }
     }
 

@@ -20,7 +20,13 @@ namespace Tanttinator.HexTerrain
         public bool Underwater => waterLevel > height;
         public Vertex center { get; protected set; }
         public Vertices ground { get; protected set; }
+        public Vertices river { get; protected set; }
+        public Vertex riverCenter { get; protected set; }
         public Vertex waterCenter { get; protected set; }
+
+        public Direction outgoingRiver { get; protected set; }
+        public List<Direction> incomingRivers { get; protected set; } = new List<Direction>();
+        bool HasRiver => outgoingRiver != null || incomingRivers.Count > 0;
 
         public HexChunk chunk { get; protected set; }
 
@@ -45,6 +51,8 @@ namespace Tanttinator.HexTerrain
         {
             center = new Vertex(this, new Vector2(0f, 0f));
             ground = new Vertices();
+            river = new Vertices();
+            riverCenter = center.Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
             waterCenter = new WaterVertex(this, position);
             foreach(Direction dir in Direction.directions)
             {
@@ -74,6 +82,15 @@ namespace Tanttinator.HexTerrain
                 ground[dir][7] = new Vertex(this, riverEdgeRight);
                 ground[dir][8] = new Vertex(this, edgeRight);
             }
+
+            foreach (Direction dir in Direction.directions)
+            {
+                river[dir][0] = ground[dir][3].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+                river[dir][1] = ground[dir][7].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+                river[dir][2] = ground[dir][1].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+                river[dir][3] = ground[dir.Clockwise][1].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+                river[dir][4] = ground[dir][0].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+            }
         }
 
         public void SetHeight(float height)
@@ -91,6 +108,20 @@ namespace Tanttinator.HexTerrain
         public void SetWaterLevel(float waterLevel)
         {
             this.waterLevel = waterLevel;
+            Refresh();
+        }
+
+        public void AddOutgoingRiver(Direction dir)
+        {
+            outgoingRiver = dir;
+            Refresh();
+        }
+
+        public void AddIncomingRiver(Direction dir)
+        {
+            if (incomingRivers.Contains(dir))
+                return;
+            incomingRivers.Add(dir);
             Refresh();
         }
 
@@ -132,6 +163,7 @@ namespace Tanttinator.HexTerrain
 
         void TriangulateGround()
         {
+            RiverUtil.TriangulateRivers(this);
             foreach(Direction dir in Direction.directions)
             {
                 Vertex a = ground[dir][0];

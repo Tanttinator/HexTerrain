@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Shore
-  m_Shader: {fileID: -6465566751694194690, guid: 9750ae821718bb145a15a618098cad11,
+  m_Name: River
+  m_Shader: {fileID: -6465566751694194690, guid: ca03909a601f91f44bd63e7289d5d74e,
     type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
@@ -20,9 +20,5 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs: []
-    m_Floats:
-    - Vector1_1D69E931: 0.8
-    - Vector1_4E62505B: 0.6
-    - Vector1_67D25317: 5
-    m_Colors:
-    - Color_DF434359: {r: 0, g: 0.7649336, b: 1, a: 0.5882353}
+    m_Floats: []
+    m_Colors: []

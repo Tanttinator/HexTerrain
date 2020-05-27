@@ -63,12 +63,15 @@ namespace Tanttinator.HexTerrain
             triangles.Add(AddVertex(c));
         }
 
-        public void AddQuad(Vertex a, Vertex b, Vertex c, Vertex d)
+        public void AddQuad(Vertex a, Vertex b, Vertex c, Vertex d, bool generateUVs = true)
         {
-            a.uv = new Vector2(0f, 1f);
-            b.uv = new Vector2(1f, 1f);
-            c.uv = new Vector2(1f, 0f);
-            d.uv = new Vector2(0f, 0f);
+            if (generateUVs)
+            {
+                a.uv = new Vector2(0f, 1f);
+                b.uv = new Vector2(1f, 1f);
+                c.uv = new Vector2(1f, 0f);
+                d.uv = new Vector2(0f, 0f);
+            }
             AddTriangle(a, b, c);
             AddTriangle(a, c, d);
         }
