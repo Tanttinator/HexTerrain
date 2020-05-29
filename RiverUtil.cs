@@ -15,11 +15,11 @@ namespace Tanttinator.HexTerrain
             List<Direction> allRivers = new List<Direction>(incomingRivers);
             allRivers.Add(outgoingRiver);
             Vertex center = tile.center;
-            Vertices ground = tile.ground;
+            Vertices<GroundVertex> ground = tile.ground;
             HexMesh mesh = tile.chunk.river;
             float riverDepth = tile.chunk.world.RiverDepth;
 
-            Vertices river = tile.river;
+            Vertices<RiverVertex> river = tile.river;
 
             if (outgoingRiver != null || incomingRivers.Count > 0)
                 center.height = -riverDepth;
@@ -123,16 +123,15 @@ namespace Tanttinator.HexTerrain
             {
                 if(allRivers.Contains(dir))
                 {
+                    ground[dir][1].height = -riverDepth;
                     ground[dir][5].height = -riverDepth;
-                    ground[dir][4].height = -riverDepth;
-                    ground[dir][0].height = -riverDepth;
+                    ground[dir][6].height = -riverDepth;
 
                     mesh.AddQuad(
                         river[dir][3],
                         river[dir][2],
                         river[dir][0],
-                        river[dir][1],
-                        false
+                        river[dir][1]
                         );
 
                     mesh.AddTriangle(
@@ -147,8 +146,7 @@ namespace Tanttinator.HexTerrain
                             river[dir][4],
                             river[dir][3],
                             river[dir.Clockwise][2],
-                            river[dir.Clockwise][4],
-                            false
+                            river[dir.Clockwise][4]
                             );
                     }
                     else

@@ -15,6 +15,7 @@ namespace Tanttinator.HexTerrain
         [SerializeField] HexChunk chunkObject = default;
 
         public const float COS_30 = 0.8660254038f;
+        public const float TAN_30 = 0.5773502692f;
 
         public float scale = 1f;
         public float heightScale = 3f;
@@ -25,6 +26,8 @@ namespace Tanttinator.HexTerrain
         [Range(0f, 1f)]
         [SerializeField] float shoreWidthMultiplier = 0.5f;
         public float ShoreWidth => edgeWidth * shoreWidthMultiplier;
+        [SerializeField] float edgeFoldWidthMultiplier = 0.2f;
+        public float EdgeFoldWidth => edgeWidth * edgeFoldWidthMultiplier;
 
         [Range(0f, 1f)]
         [SerializeField] float riverWidthMultiplier = 0.5f;

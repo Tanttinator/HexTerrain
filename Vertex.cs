@@ -13,53 +13,97 @@ namespace Tanttinator.HexTerrain
         public Vector2 localPos { get; protected set; }
         public float height;
         public Vector2 uv = new Vector2(0f, 0f);
+        public Color color = Color.white;
 
-        protected HexTile tile;
+        public virtual float BaseHeight => 0f;
+        public float Height => BaseHeight + height;
+        public virtual Vector2 GlobalPos => localPos;
+        public Vector3 Position => new Vector3(GlobalPos.x, Height, GlobalPos.y);
+        public virtual Color Color => color;
 
-        public virtual Vector2 GlobalPos => new Vector2(tile.position.x + localPos.x, tile.position.y + localPos.y);
-        public virtual Vector3 Position => new Vector3(tile.position.x + localPos.x, tile.Height + height, tile.position.y + localPos.y);
-        public virtual Color Color => tile.color;
-
-        public Vertex(HexTile tile, Vector2 position)
+        public Vertex(Vector2 position)
         {
-            this.tile = tile;
             localPos = position;
         }
+    }
 
-        public Vertex(HexTile tile, Vector2 position, Vector2 uv)
+    public class TileVertex : Vertex
+    {
+        public HexTile tile { get; protected set; }
+
+        public override Vector2 GlobalPos => new Vector2(tile.position.x + localPos.x, tile.position.y + localPos.y);
+        public override Color Color => tile.color;
+        public override float BaseHeight => tile.Height;
+
+        public TileVertex(HexTile tile, Vector2 position) : base(position)
         {
             this.tile = tile;
-            localPos = position;
-            this.uv = uv;
+        }
+    }
+
+    public class GroundVertex : TileVertex
+    {
+        public GroundVertex(HexTile tile, Vector2 position) : base(tile, position)
+        {
+
         }
 
-        public Vertex Clone(float height)
+        public GroundVertex Offset(Vector2 pos, float height)
         {
-            Vertex v = new Vertex(tile, localPos);
-            v.height = height;
+            GroundVertex v = new GroundVertex(tile, localPos + pos);
+            v.height = this.height + height;
             return v;
         }
     }
 
-    public class WaterVertex : Vertex
+    public class WaterVertex : TileVertex
     {
-        public override Vector2 GlobalPos => localPos;
-        public override Vector3 Position => new Vector3(localPos.x, tile.WaterLevel, localPos.y);
-        public override Color Color => Color.white;
+        public override float BaseHeight => tile.WaterLevel;
         public WaterVertex(HexTile tile, Vector2 position) : base(tile, position)
+        {
+
+        }
+
+        public WaterVertex(HexTile tile, Vector2 position, Vector2 uv) : base(tile, position)
+        {
+            this.uv = uv;
+        }
+
+        public WaterVertex(TileVertex vert) : base(vert.tile, vert.localPos)
         {
 
         }
     }
 
-    public class Vertices : Dictionary<Direction, Vertex[]>
+    public class RiverVertex : TileVertex
     {
-        public Vertices()
+        public override float BaseHeight => Mathf.Lerp(-tile.chunk.world.RiverDepth, 0, tile.chunk.world.riverWaterHeight) + tile.Height;
+
+        public RiverVertex(HexTile tile, Vector2 position) : base(tile, position)
         {
-            foreach(Direction dir in Direction.directions)
-            {
-                this[dir] = new Vertex[9];
-            }
+
         }
+
+        public RiverVertex(TileVertex vert) : base(vert.tile, vert.localPos)
+        {
+
+        }
+
+        public RiverVertex Clone(Vector2 uv)
+        {
+            RiverVertex v = new RiverVertex(this);
+            v.uv = uv;
+            return v;
+        }
+
+        public RiverVertex Clone(float x, float y)
+        {
+            return Clone(new Vector2(x, y));
+        }
+    }
+
+    public class Vertices<T> : Dictionary<Direction, T[]> where T : Vertex
+    {
+
     }
 }

@@ -99,7 +99,7 @@ namespace Tanttinator.HexTerrain
 
         void TriangulateCornerGround(HexTile a, HexTile b, HexTile c, Direction dir)
         {
-            ground.AddTriangle(a.ground[dir][8], b.ground[dir.Opposite.CounterClockwise][8], c.ground[dir.Clockwise.Opposite][8]);
+            ground.AddTriangle(a.ground[dir][3], b.ground[dir.Opposite.CounterClockwise][3], c.ground[dir.Clockwise.Opposite][3]);
         }
 
         void TriangulateCornerWater(HexTile a, HexTile b, HexTile c, Direction dir)

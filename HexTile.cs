@@ -18,15 +18,14 @@ namespace Tanttinator.HexTerrain
         float waterLevel = 0f;
         public float WaterLevel => waterLevel * chunk.world.heightScale;
         public bool Underwater => waterLevel > height;
-        public Vertex center { get; protected set; }
-        public Vertices ground { get; protected set; }
-        public Vertices river { get; protected set; }
-        public Vertex riverCenter { get; protected set; }
-        public Vertex waterCenter { get; protected set; }
+        public GroundVertex center { get; protected set; }
+        public Vertices<GroundVertex> ground { get; protected set; }
+        public Vertices<RiverVertex> river { get; protected set; }
+        public RiverVertex riverCenter { get; protected set; }
+        public WaterVertex waterCenter { get; protected set; }
 
         public Direction outgoingRiver { get; protected set; }
         public List<Direction> incomingRivers { get; protected set; } = new List<Direction>();
-        bool HasRiver => outgoingRiver != null || incomingRivers.Count > 0;
 
         public HexChunk chunk { get; protected set; }
 
@@ -49,11 +48,11 @@ namespace Tanttinator.HexTerrain
         /// </summary>
         void InitVertices(HexWorld world)
         {
-            center = new Vertex(this, new Vector2(0f, 0f));
-            ground = new Vertices();
-            river = new Vertices();
-            riverCenter = center.Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
-            waterCenter = new WaterVertex(this, position);
+            center = new GroundVertex(this, Random.insideUnitCircle / 10f);
+            ground = new Vertices<GroundVertex>();
+            river = new Vertices<RiverVertex>();
+            riverCenter = new RiverVertex(center);
+            waterCenter = new WaterVertex(center);
             foreach(Direction dir in Direction.directions)
             {
                 float centerHexOuterRadius = world.RiverWidth / HexWorld.COS_30 * 0.5f;
@@ -65,31 +64,30 @@ namespace Tanttinator.HexTerrain
                 Vector2 riverEdgeLeft = edgeMid + (edgeLeft - edgeRight).normalized * world.RiverWidth * 0.5f;
                 Vector2 riverEdgeRight = edgeMid + (edgeRight - edgeLeft).normalized * world.RiverWidth * 0.5f;
 
-                Vector2 a = edgeMid.normalized * centerHexOuterRadius;
-                Vector2 b = edgeLeft.normalized * world.RiverWidth;
-                Vector2 c = (riverEdgeLeft - b) * 0.5f + b;
+                Vector2 a = edgeMid.normalized * centerHexOuterRadius + center.localPos;
+                Vector2 b = edgeLeft.normalized * world.RiverWidth + center.localPos;
+                Vector2 c = b + (edgeRight.normalized * world.RiverWidth + center.localPos - b) * 0.5f;
 
-                Vector2 e = edgeMid + (c - riverEdgeLeft);
-                Vector2 f = riverEdgeRight + (c - riverEdgeLeft);
-
-                ground[dir][0] = new Vertex(this, a);
-                ground[dir][1] = new Vertex(this, b);
-                ground[dir][2] = new Vertex(this, c);
-                ground[dir][3] = new Vertex(this, riverEdgeLeft);
-                ground[dir][4] = new Vertex(this, e);
-                ground[dir][5] = new Vertex(this, edgeMid);
-                ground[dir][6] = new Vertex(this, f);
-                ground[dir][7] = new Vertex(this, riverEdgeRight);
-                ground[dir][8] = new Vertex(this, edgeRight);
+                ground[dir] = new GroundVertex[] {
+                    new GroundVertex(this, riverEdgeLeft),
+                    new GroundVertex(this, edgeMid),
+                    new GroundVertex(this, riverEdgeRight),
+                    new GroundVertex(this, edgeRight),
+                    new GroundVertex(this, b),
+                    new GroundVertex(this, c),
+                    new GroundVertex(this, a)
+                };
             }
 
             foreach (Direction dir in Direction.directions)
             {
-                river[dir][0] = ground[dir][3].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
-                river[dir][1] = ground[dir][7].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
-                river[dir][2] = ground[dir][1].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
-                river[dir][3] = ground[dir.Clockwise][1].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
-                river[dir][4] = ground[dir][0].Clone(Mathf.Lerp(-chunk.world.RiverDepth, 0, chunk.world.riverWaterHeight));
+                river[dir] = new RiverVertex[]{
+                    new RiverVertex(ground[dir][0]),
+                    new RiverVertex(ground[dir][2]),
+                    new RiverVertex(ground[dir][4]),
+                    new RiverVertex(ground[dir.Clockwise][4]),
+                    new RiverVertex(ground[dir][6])
+                };
             }
         }
 
@@ -167,27 +165,24 @@ namespace Tanttinator.HexTerrain
             foreach(Direction dir in Direction.directions)
             {
                 Vertex a = ground[dir][0];
-                Vertex b = ground[dir.Clockwise][0];
-                Vertex c = ground[dir.Clockwise][1];
-                Vertex d = ground[dir][1];
+                Vertex b = ground[dir][1];
+                Vertex c = ground[dir][2];
+                Vertex d = ground[dir][3];
                 Vertex e = ground[dir][4];
-                Vertex f = ground[dir][6];
-                Vertex g = ground[dir][2];
-                Vertex h = ground[dir][3];
+                Vertex f = ground[dir][5];
+                Vertex g = ground[dir][6];
+                Vertex h = ground[dir.Clockwise][0];
+                Vertex i = ground[dir.Clockwise][4];
+                Vertex j = ground[dir.Clockwise][6];
 
-                Vertex edgeMid = ground[dir][5];
-                Vertex riverEdgeRight = ground[dir][7];
-                Vertex edgeRight = ground[dir][8];
+                chunk.ground.AddTriangle(center, g, j);
+                chunk.ground.AddTriangle(g, i, j);
+                chunk.ground.AddTriangle(g, f, i);
+                chunk.ground.AddTriangle(g, e, f);
 
-                chunk.ground.AddTriangle(center, a, b);
-                chunk.ground.AddTriangle(a, c, b);
-                chunk.ground.AddQuad(e, f, c, a);
-                chunk.ground.AddQuad(e, a, d, g);
-                chunk.ground.AddQuad(h, edgeMid, e, g);
-                chunk.ground.AddQuad(edgeMid, riverEdgeRight, f, e);
-                chunk.ground.AddTriangle(c, f, ground[dir.Clockwise][2]);
-                chunk.ground.AddTriangle(f, riverEdgeRight, edgeRight);
-                chunk.ground.AddQuad(edgeRight, ground[dir.Clockwise][3], ground[dir.Clockwise][2], f);  
+                chunk.ground.AddQuad(a, b, f, e);
+                chunk.ground.AddQuad(b, c, i, f);
+                chunk.ground.AddQuad(c, d, h, i);
             }
         }
 
@@ -199,8 +194,8 @@ namespace Tanttinator.HexTerrain
                 Edge rightEdge = GetEdge(dir.Clockwise);
                 Edge leftEdge = GetEdge(dir.CounterClockwise);
 
-                Vertex left = new WaterVertex(this, ground[dir.CounterClockwise][8].GlobalPos);
-                Vertex right = new WaterVertex(this, ground[dir][8].GlobalPos);
+                WaterVertex left = new WaterVertex(ground[dir.CounterClockwise][3]);
+                WaterVertex right = new WaterVertex(ground[dir][3]);
 
                 if (rightEdge != null && rightEdge.water != null) right = rightEdge.water[dir.Clockwise][0];
                 if (leftEdge != null && leftEdge.water != null) left = leftEdge.water[dir.CounterClockwise][1];
