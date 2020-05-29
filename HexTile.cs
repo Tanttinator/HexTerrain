@@ -48,7 +48,7 @@ namespace Tanttinator.HexTerrain
         /// </summary>
         void InitVertices(HexWorld world)
         {
-            center = new GroundVertex(this, Random.insideUnitCircle / 10f);
+            center = new GroundVertex(this, Random.insideUnitCircle / 5f);
             ground = new Vertices<GroundVertex>();
             river = new Vertices<RiverVertex>();
             riverCenter = new RiverVertex(center);

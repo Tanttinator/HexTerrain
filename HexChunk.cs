@@ -99,7 +99,36 @@ namespace Tanttinator.HexTerrain
 
         void TriangulateCornerGround(HexTile a, HexTile b, HexTile c, Direction dir)
         {
-            ground.AddTriangle(a.ground[dir][3], b.ground[dir.Opposite.CounterClockwise][3], c.ground[dir.Clockwise.Opposite][3]);
+            Edge ea = a.GetEdge(dir);
+            Edge eb = b.GetEdge(dir.Clockwise.Clockwise);
+            Edge ec = a.GetEdge(dir.Clockwise);
+
+            Vertex va1 = ea.ground[dir][9];
+            Vertex va2 = ec.ground[dir.Clockwise][5];
+
+            Vertex vb1 = eb.ground[dir.Clockwise.Clockwise][9];
+            Vertex vb2 = ea.ground[dir.Opposite][5];
+
+            Vertex vc1 = ec.ground[dir.Clockwise.Opposite][9];
+            Vertex vc2 = eb.ground[dir.CounterClockwise][5];
+
+            Vector3 centerPos = (va1.Position + va2.Position + vb1.Position + vb2.Position + vc1.Position + vc2.Position) / 6f;
+
+            Vertex center = new Vertex(new Vector2(centerPos.x, centerPos.z));
+            center.height = centerPos.y;
+            center.color = Color.Lerp(a.color, Color.Lerp(b.color, c.color, 0.5f), 0.5f);
+
+            ground.AddTriangle(ea.ground[dir][4], va1, va2);
+            ground.AddTriangle(eb.ground[dir.Clockwise.Clockwise][4], vb1, vb2);
+            ground.AddTriangle(ec.ground[dir.Clockwise.Opposite][4], vc1, vc2);
+
+            ground.AddTriangle(center, va2, va1);
+            ground.AddTriangle(center, vb2, vb1);
+            ground.AddTriangle(center, vc2, vc1);
+
+            ground.AddTriangle(center, va1, vb2);
+            ground.AddTriangle(center, vb1, vc2);
+            ground.AddTriangle(center, vc1, va2);
         }
 
         void TriangulateCornerWater(HexTile a, HexTile b, HexTile c, Direction dir)

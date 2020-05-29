@@ -28,6 +28,7 @@ namespace Tanttinator.HexTerrain
         public float ShoreWidth => edgeWidth * shoreWidthMultiplier;
         [SerializeField] float edgeFoldWidthMultiplier = 0.2f;
         public float EdgeFoldWidth => edgeWidth * edgeFoldWidthMultiplier;
+        [Range(0f, 1f)] public float edgeFoldAngle = 0.2f;
 
         [Range(0f, 1f)]
         [SerializeField] float riverWidthMultiplier = 0.5f;
@@ -80,21 +81,6 @@ namespace Tanttinator.HexTerrain
         public Vector2 CalculateCenter(Coords coords)
         {
             return new Vector2(coords.x * WidthDiff + (Mathf.Abs(coords.y) % 2 == 0 ? 0 : WidthOffset), coords.y * HeightDiff);
-        }
-
-        public Vector2 LerpHeight(Vertex a, Vertex b, float height)
-        {
-            Vertex upper = a;
-            Vertex lower = b;
-            if(a.Position.y < b.Position.y)
-            {
-                upper = b;
-                lower = a;
-            }
-
-            float t = Mathf.Clamp01((height - lower.Position.y) / (upper.Position.y - lower.Position.y));
-
-            return Vector2.Lerp(lower.GlobalPos, upper.GlobalPos, t);
         }
 
         public Vector2 LeftShoreVertex(Edge a)

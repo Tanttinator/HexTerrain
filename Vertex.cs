@@ -27,6 +27,25 @@ namespace Tanttinator.HexTerrain
         }
     }
 
+    public class ChildVertex : Vertex
+    {
+        Vertex parent;
+        public override float BaseHeight => parent.Height;
+        public override Vector2 GlobalPos => parent.GlobalPos + localPos;
+        public override Color Color => parent.Color;
+
+        public ChildVertex(Vertex parent, Vector2 offset) : base(offset)
+        {
+            this.parent = parent;
+        }
+
+        public ChildVertex(Vertex parent, Vector3 offset) : base(new Vector2(offset.x, offset.z))
+        {
+            this.parent = parent;
+            height = offset.y;
+        }
+    }
+
     public class TileVertex : Vertex
     {
         public HexTile tile { get; protected set; }
